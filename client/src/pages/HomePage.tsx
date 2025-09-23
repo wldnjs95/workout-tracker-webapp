@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../App.css';
 import './HomePage.css';
@@ -160,8 +160,8 @@ function HomePage() {
             <tbody>
               {groupedWorkouts.length > 0 ? (
                 groupedWorkouts.map(workout => (
-                  <>
-                    <tr key={workout.date} className="workout-summary-row" onClick={() => toggleWorkoutDetails(workout.date)}>
+                  <React.Fragment key={workout.date}>
+                    <tr className="workout-summary-row" onClick={() => toggleWorkoutDetails(workout.date)}>
                       <td>
                         <span className="expand-icon">
                           {expandedWorkoutDate === workout.date ? '▼' : '▶'}
@@ -221,7 +221,7 @@ function HomePage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 ))
               ) : (
                 <tr>
