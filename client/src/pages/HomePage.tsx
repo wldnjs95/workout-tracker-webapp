@@ -134,104 +134,133 @@ function HomePage() {
   };
 
   return (
-    <div className="App">
-      <h1>Workout Tracker</h1>
-      <Link to="/add">
-        <button>Add New Workout</button>
-      </Link>
-      {error && <p className="error-message">Error: {error}</p>}
-      
-      <div className="workouts-container card">
-        <div className="card-header">
-          <h2 className="card-title">Workout Calendar</h2>
-          <p className="card-description">Click on any workout to view the detailed log.</p>
+    <div className="App container mx-auto p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Workout Tracker</h1>
+        <Link to="/add">
+          <button className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 transition-colors">
+            Add New Workout
+          </button>
+        </Link>
+      </div>
+      {error && (
+        <div role="alert" className="alert alert-error mb-4">
+          Error: {error}
         </div>
-        <div className="card-content">
-          <table className="main-workout-table">
-            <thead>
-              <tr>
-                <th style={{ width: '50px' }}></th>
-                <th>Date</th>
-                <th>Category</th>
-                <th>Exercises</th>
-                <th style={{ width: '150px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedWorkouts.length > 0 ? (
-                groupedWorkouts.map(workout => (
-                  <React.Fragment key={workout.date}>
-                    <tr className="workout-summary-row" onClick={() => toggleWorkoutDetails(workout.date)}>
-                      <td>
-                        <span className="expand-icon">
-                          {expandedWorkoutDate === workout.date ? '▼' : '▶'}
-                        </span>
-                      </td>
-                      <td>{workout.date}</td>
-                      <td>
-                        <span className="category-badge">{workout.category}</span>
-                      </td>
-                      <td>
-                        <span className="exercise-count-badge">{workout.exercises.length} exercises</span>
-                      </td>
-                      <td>
-                        <div className="actions-cell">
-                          <Link to={`/workout/${workout.id}`} className="edit-button">Edit</Link>
-                          <button onClick={(e) => handleDeleteWorkout(e, workout.date)} className="delete-button">Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedWorkoutDate === workout.date && (
-                      <tr className="workout-details-row">
-                        <td colSpan={5} className="details-cell">
-                          <div className="details-content">
-                            <h4>Workout Log Details</h4>
-                            {workout.exercises.map((exercise, index) => (
-                              <div key={index} className="exercise-log-item">
-                                <div className="exercise-log-header">
-                                  <h5>{exercise.name}</h5>
-                                  <div className="exercise-header-actions">
-                                    <span>{exercise.intensity}</span>
-                                    <button onClick={() => handleDeleteExercise(workout.date, exercise.name)} className="delete-exercise-button">
-                                      ✕
-                                    </button>
-                                  </div>
-                                </div>
-                                <table className="sets-table">
-                                  <thead>
-                                    <tr>
-                                      <th>Set</th>
-                                      <th>Plan</th>
-                                      <th>Actual</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {exercise.sets.sort((a,b) => parseInt(a.setNumber) - parseInt(b.setNumber)).map((set, setIndex) => (
-                                      <tr key={setIndex}>
-                                        <td>{set.setNumber}</td>
-                                        <td>{set.plan}</td>
-                                        <td>{set.actual}</td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            ))}
+      )}
+
+      <div className="workouts-container card shadow-md rounded-lg border">
+        <div className="card-header border-b p-4">
+          <h2 className="card-title text-lg font-semibold">Workout Calendar</h2>
+          <p className="card-description text-muted-foreground text-sm">
+            Click on any workout to view the detailed log.
+          </p>
+        </div>
+        <div className="card-content p-4">
+          <div className="relative w-full overflow-x-auto">
+            <table className="main-workout-table w-full caption-bottom text-sm">
+              <thead className="[&_tr]:border-b">
+                <tr>
+                  <th style={{ width: '50px' }} className="px-2 py-2"></th>
+                  <th className="px-2 py-2 text-left">Date</th>
+                  <th className="px-2 py-2 text-left">Category</th>
+                  <th className="px-2 py-2 text-left">Exercises</th>
+                  <th style={{ width: '150px' }} className="px-2 py-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="[&_tr:last-child]:border-0">
+                {groupedWorkouts.length > 0 ? (
+                  groupedWorkouts.map(workout => (
+                    <React.Fragment key={workout.date}>
+                      <tr
+                        className="workout-summary-row hover:bg-muted/50 transition-colors border-b cursor-pointer"
+                        onClick={() => toggleWorkoutDetails(workout.date)}
+                        aria-expanded={expandedWorkoutDate === workout.date}
+                      >
+                        <td className="px-2 py-2">
+                          <span className="expand-icon mr-2">
+                            {expandedWorkoutDate === workout.date ? '▼' : '▶'}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2">{workout.date}</td>
+                        <td className="px-2 py-2">
+                          <span className="category-badge">{workout.category}</span>
+                        </td>
+                        <td className="px-2 py-2">
+                          <span className="exercise-count-badge">{workout.exercises.length} exercises</span>
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="actions-cell flex items-center gap-2">
+                            <Link to={`/workout/${workout.id}`} className="edit-button inline-flex items-center rounded-md border px-3 py-1.5 hover:bg-accent">
+                              Edit
+                            </Link>
+                            <button
+                              onClick={(e) => handleDeleteWorkout(e, workout.date)}
+                              className="delete-button inline-flex items-center rounded-md border px-3 py-1.5 text-red-600 hover:bg-red-50"
+                            >
+                              Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>
-                    Loading workouts or no workouts found...
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                      {expandedWorkoutDate === workout.date && (
+                        <tr className="workout-details-row">
+                          <td colSpan={5} className="details-cell p-0">
+                            <div className="details-content p-4 space-y-4 bg-muted/20">
+                              <h4 className="text-base font-semibold">Workout Log Details</h4>
+                              {workout.exercises.map((exercise, index) => (
+                                <div key={index} className="exercise-log-item rounded-md border p-4">
+                                  <div className="exercise-log-header flex items-center justify-between mb-2">
+                                    <h5 className="font-medium">{exercise.name}</h5>
+                                    <div className="exercise-header-actions flex items-center gap-2">
+                                      <span className="text-sm text-muted-foreground">{exercise.intensity}</span>
+                                      <button
+                                        aria-label={`Delete ${exercise.name}`}
+                                        onClick={() => handleDeleteExercise(workout.date, exercise.name)}
+                                        className="delete-exercise-button inline-flex h-6 w-6 items-center justify-center rounded hover:bg-red-50 text-red-600"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="relative w-full overflow-x-auto">
+                                    <table className="sets-table w-full text-sm">
+                                      <thead className="[&_tr]:border-b">
+                                        <tr>
+                                          <th className="px-2 py-2 text-left">Set</th>
+                                          <th className="px-2 py-2 text-left">Plan</th>
+                                          <th className="px-2 py-2 text-left">Actual</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="[&_tr:last-child]:border-0">
+                                        {exercise.sets.sort((a,b) => parseInt(a.setNumber) - parseInt(b.setNumber)).map((set, setIndex) => (
+                                          <tr key={setIndex} className="border-b">
+                                            <td className="px-2 py-2">{set.setNumber}</td>
+                                            <td className="px-2 py-2">{set.plan}</td>
+                                            <td className="px-2 py-2">{set.actual}</td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>
+                      Loading workouts or no workouts found...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
