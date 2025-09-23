@@ -1,0 +1,198 @@
+/* General Card Styling from Reference */
+.card {
+  border: 1px solid #e5e7eb; /* cool-gray-200 */
+  border-radius: 0.75rem; /* 12px */
+  background-color: #ffffff; /* white */
+}
+
+.card-header {
+  padding: 1.5rem; /* 24px */
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.card-title {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+  color: #111827; /* cool-gray-900 */
+}
+
+.card-description {
+  color: #6b7280; /* cool-gray-500 */
+  font-size: 0.875rem; /* 14px */
+}
+
+.card-content {
+  padding: 1.5rem; /* 24px */
+}
+
+/* Main Workout Table */
+.main-workout-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.main-workout-table th, .main-workout-table td {
+  padding: 0.75rem 1rem; /* 12px 16px */
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.main-workout-table th {
+  color: #6b7280; /* cool-gray-500 */
+  font-size: 0.75rem; /* 12px */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.workout-summary-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.workout-summary-row:hover {
+  background-color: #f9fafb; /* cool-gray-50 */
+}
+
+.expand-icon {
+  color: #6b7280;
+}
+
+.exercise-count-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem; /* 4px 10px */
+  font-size: 0.75rem; /* 12px */
+  font-weight: 500;
+  border-radius: 9999px;
+  background-color: #f3f4f6; /* cool-gray-100 */
+  color: #4b5563; /* cool-gray-600 */
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem; /* 4px 10px */
+  font-size: 0.75rem; /* 12px */
+  font-weight: 500;
+  border-radius: 0.375rem; /* 6px */
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #4b5563;
+}
+
+.edit-button {
+  color: #3b82f6; /* blue-500 */
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.edit-button:hover {
+  text-decoration: underline;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* 16px */
+}
+
+.delete-button {
+  background-color: transparent;
+  border: none;
+  color: #ef4444; /* red-500 */
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0;
+}
+
+.delete-button:hover {
+  text-decoration: underline;
+}
+
+/* Workout Details Row */
+.workout-details-row .details-cell {
+  padding: 0;
+}
+
+.details-content {
+  padding: 1.5rem; /* 24px */
+  background-color: #f9fafb; /* cool-gray-50 */
+}
+
+.details-content h4 {
+  font-size: 1.125rem; /* 18px */
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.exercise-log-item {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem; /* 8px */
+  margin-bottom: 1rem;
+  overflow: hidden; /* To make border-radius work on table */
+}
+
+.exercise-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem; /* 12px 16px */
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.exercise-log-header h5 {
+  font-weight: 600;
+}
+
+.exercise-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.delete-exercise-button {
+  background-color: transparent;
+  border: none;
+  color: #9ca3af; /* cool-gray-400 */
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.delete-exercise-button:hover {
+  background-color: #f3f4f6; /* cool-gray-100 */
+  color: #ef4444; /* red-500 */
+}
+
+/* Sets Table (nested inside details) */
+.sets-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sets-table th, .sets-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sets-table thead {
+  background-color: #f9fafb;
+}
+
+.sets-table th {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Remove bottom border from last row */
+.sets-table tr:last-child td {
+  border-bottom: none;
+}
+
+.main-workout-table > tbody > tr:last-child > td {
+    border-bottom: none;
+}

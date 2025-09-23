@@ -1,0 +1,30 @@
+# Node
+node_modules/
+dist/
+build/
+*.log
+
+# Vite
+.vite/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.venv/
+.env
+
+# Secrets
+server/credentials.json
+
+# OS / IDE
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Aider / tools
+.aider*

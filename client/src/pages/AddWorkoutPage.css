@@ -1,0 +1,79 @@
+.add-workout-page {
+  padding: 16px;
+  max-width: 720px;
+  margin: 0 auto; /* Center the form */
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.add-exercise-btn-container {
+  margin-bottom: 12px;
+}
+
+.exercise-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.exercise-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.remove-exercise-btn {
+  margin-left: auto;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.exercise-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.notes-container {
+  margin-top: 8px;
+}
+
+.set-list-container {
+  margin-top: 12px;
+}
+
+.add-set-btn-container {
+  margin-bottom: 8px;
+}
+
+.set-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+
+.set-number-display {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fafafa;
+  text-align: center;
+}
+
+.readonly-input {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
