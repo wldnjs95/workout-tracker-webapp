@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import './AddWorkoutPage.css';
@@ -50,6 +50,14 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
   const [newCategoryInput, setNewCategoryInput] = useState("");
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const defaultCategories = ["Push", "Pull", "Legs", "Cardio", "Full Body"];
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragExerciseIndex, setDragExerciseIndex] = useState<number | null>(null);
+  const [dragPreview, setDragPreview] = useState(0);
+  const [dragProgress, setDragProgress] = useState(0);
+  const [originalSets, setOriginalSets] = useState<SetRow[]>([]);
+  const dragStartX = useRef(0);
+  const dragCurrentX = useRef(0);
 
   React.useEffect(() => {
     if (initialData) {
@@ -120,6 +128,75 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
       setShowNewCategoryInput(false);
     }
   };
+
+  const handleMouseDown = useCallback((e: React.MouseEvent, exerciseIndex: number) => {
+    e.preventDefault();
+    
+    const currentExercise = watch(`exercises.${exerciseIndex}`);
+    const originalSetsArray = [...currentExercise.sets];
+    
+    setIsDragging(true);
+    setDragExerciseIndex(exerciseIndex);
+    setDragPreview(0);
+    setOriginalSets(originalSetsArray);
+    dragStartX.current = e.clientX;
+    dragCurrentX.current = e.clientX;
+
+    document.body.classList.add('drag-active');
+
+    const handleMouseMove = (e: MouseEvent) => {
+      dragCurrentX.current = e.clientX;
+      const deltaX = e.clientX - dragStartX.current;
+      
+      const setWidth = 100;
+      const deadZone = 20;
+      
+      let setChange = 0;
+      let progress = 0;
+      
+      if (Math.abs(deltaX) > deadZone) {
+        const adjustedDelta = deltaX - Math.sign(deltaX) * deadZone;
+        setChange = Math.round(adjustedDelta / setWidth);
+        const remainder = Math.abs(adjustedDelta) % setWidth;
+        progress = remainder / setWidth;
+      }
+      
+      setDragPreview(setChange);
+      setDragProgress(progress);
+
+      const originalLength = originalSetsArray.length;
+      const newLength = Math.max(1, originalLength + setChange);
+      
+      if (newLength !== watch(`exercises.${exerciseIndex}.sets`).length) {
+        const newSets = [...originalSetsArray];
+        
+        if (newLength > originalLength) {
+          for (let i = originalLength; i < newLength; i++) {
+            newSets.push({ plan: '', actual: '' });
+          }
+        } else {
+          newSets.splice(newLength);
+        }
+        
+        setValue(`exercises.${exerciseIndex}.sets`, newSets);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setDragExerciseIndex(null);
+      setDragPreview(0);
+      setDragProgress(0);
+      setOriginalSets([]);
+      document.body.classList.remove('drag-active');
+      
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [watch, setValue]);
 
   return (
     <div className="add-workout-page container mx-auto p-4">
@@ -214,6 +291,11 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
                     exerciseIndex={exIdx}
                     removeExercise={removeExercise}
                     isEditing={isEditing}
+                    isDragging={isDragging && dragExerciseIndex === exIdx}
+                    dragPreview={dragPreview}
+                    dragProgress={dragProgress}
+                    originalSets={originalSets}
+                    onMouseDown={(e) => handleMouseDown(e, exIdx)}
                   />
                 ))}
                 {exerciseFields.length === 0 && (

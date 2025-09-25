@@ -1,89 +1,40 @@
 import React from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import { FormData } from './AddWorkoutPage';
+import { FormData, SetRow } from './AddWorkoutPage';
 import { Card, CardHeader, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
-import { Trash2, Plus, GripVertical } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-
-interface SortableSetProps {
-  id: string;
-  children: React.ReactNode;
-}
-
-const SortableSet: React.FC<SortableSetProps> = ({ id, children }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} className="flex items-center gap-2 bg-background rounded-md p-2 border">
-      <button type="button" {...listeners} className="cursor-grab">
-        <GripVertical className="h-5 w-5 text-muted-foreground" />
-      </button>
-      {children}
-    </div>
-  );
-};
-
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Trash2, Plus, X } from 'lucide-react';
 
 interface ExerciseCardProps {
   exerciseIndex: number;
   removeExercise: (index: number) => void;
   isEditing: boolean;
+  isDragging: boolean;
+  dragPreview: number;
+  dragProgress: number;
+  originalSets: SetRow[];
+  onMouseDown: (e: React.MouseEvent) => void;
 }
 
-const ExerciseCard: React.FC<ExerciseCardProps> = ({ exerciseIndex, removeExercise, isEditing }) => {
-  const { control, register } = useFormContext<FormData>();
+const ExerciseCard: React.FC<ExerciseCardProps> = ({ 
+  exerciseIndex, 
+  removeExercise, 
+  isEditing, 
+  isDragging, 
+  dragPreview, 
+  dragProgress, 
+  originalSets, 
+  onMouseDown 
+}) => {
+  const { control, register, watch } = useFormContext<FormData>();
 
-  const { fields: setFields, append: appendSet, remove: removeSet, move: moveSet } = useFieldArray({
+  const { fields: setFields, append: appendSet, remove: removeSet } = useFieldArray({
     control,
     name: `exercises.${exerciseIndex}.sets`,
   });
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const {active, over} = event;
-    
-    if (active.id !== over?.id) {
-      const oldIndex = setFields.findIndex((field) => field.id === active.id);
-      const newIndex = setFields.findIndex((field) => field.id === over!.id);
-      moveSet(oldIndex, newIndex);
-    }
-  }
 
   return (
     <Card className="mb-4">
@@ -106,34 +57,73 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ exerciseIndex, removeExerci
           </div>
         )}
 
-        <div>
-          <label>Sets</label>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
+        <div className="w-fit flex items-end gap-2">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {watch(`exercises.${exerciseIndex}.sets`).map((_, setIndex) => {
+                  const isPreviewHeader = isDragging && originalSets.length > 0 && setIndex >= originalSets.length;
+                  return (
+                    <TableHead key={setIndex} className={`text-center w-32 text-xs ${isPreviewHeader ? 'opacity-60 text-primary' : ''}`}>
+                      Set {setIndex + 1}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                {watch(`exercises.${exerciseIndex}.sets`).map((set, setIndex) => {
+                  const isPreviewSet = isDragging && originalSets.length > 0 && setIndex >= originalSets.length;
+                  return (
+                    <TableCell key={setIndex} className={`text-center w-32 px-2 text-xs ${isPreviewSet ? 'opacity-60 animate-pulse' : ''}`}>
+                      <Input
+                        {...register(`exercises.${exerciseIndex}.sets.${setIndex}.plan` as const)}
+                        className={`w-full h-6 text-xs px-1 text-center ${isPreviewSet ? 'bg-primary/10 border-primary/30 border-dashed' : ''}`}
+                        placeholder="Plan"
+                      />
+                      {isEditing && (
+                        <Input
+                          {...register(`exercises.${exerciseIndex}.sets.${setIndex}.actual` as const)}
+                          className={`w-full h-6 text-xs px-1 text-center mt-1 ${isPreviewSet ? 'bg-primary/10 border-primary/30 border-dashed' : ''}`}
+                          placeholder="Actual"
+                        />
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            </TableBody>
+          </Table>
+          <button
+            type="button"
+            onClick={() => appendSet({ plan: '', actual: '' })}
+            onMouseDown={onMouseDown}
+            className={`h-8 w-8 rounded-md flex items-center justify-center transition-colors cursor-pointer mb-1 relative ${
+              isDragging
+                ? 'bg-primary text-primary-foreground scale-110'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+            }`}
+            title="Click to add set • Drag right to add multiple • Drag left to remove"
           >
-            <SortableContext
-              items={setFields.map(field => field.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2 mt-2">
-                {setFields.map((setField, setIdx) => (
-                  <SortableSet key={setField.id} id={setField.id}>
-                    <span className="font-medium text-sm">#{setIdx + 1}</span>
-                    <Input placeholder="Plan (e.g., 5 reps @ 100lb)" {...register(`exercises.${exerciseIndex}.sets.${setIdx}.plan` as const)} />
-                    {isEditing && <Input placeholder="Actual (e.g., 5 reps @ 100lb)" {...register(`exercises.${exerciseIndex}.sets.${setIdx}.actual` as const)} />}
-                    <Button variant="ghost" size="icon" onClick={() => removeSet(setIdx)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </SortableSet>
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendSet({ plan: '', actual: '' })}>
-            + Add Set
-          </Button>
+            <Plus className="h-4 w-4" />
+            {isDragging && (
+              <>
+                <div 
+                  className="absolute inset-0 rounded-md border-2 border-primary/30"
+                  style={{
+                    background: `conic-gradient(from 0deg, rgb(var(--primary)) ${dragProgress * 360}deg, transparent ${dragProgress * 360}deg)`
+                  }}
+                />
+                <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+                  {dragPreview > 0 ? `+${dragPreview} sets` : 
+                   dragPreview < 0 ? `${dragPreview} sets` : 
+                   dragProgress > 0 ? `${Math.round(dragProgress * 100)}% to next` : 
+                   'Drag to add/remove sets'}
+                </div>
+              </>
+            )}
+          </button>
         </div>
       </CardContent>
     </Card>
