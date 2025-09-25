@@ -18,14 +18,18 @@ def rows_to_objects(rows):
         object_list.append(dict(zip(SPREADSHEET_HEADERS, padded_row)))
     return object_list
 
+from fastapi import Query
+
+# ... (the rest of the imports)
+
 @router.get("/workouts")
-async def get_workouts():
+async def get_workouts(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, le=100)):
     creds = service_account.Credentials.from_service_account_file(
         config.SERVICE_ACCOUNT_FILE, scopes=config.SCOPES
     )
     service = build("sheets", "v4", credentials=creds)
     
-    range_name = f"{config.SHEET_NAME}!A:I" # Read all columns
+    range_name = f"{config.SHEET_NAME}!A:I"
     
     result = service.spreadsheets().values().get(
         spreadsheetId=config.SPREADSHEET_ID,
@@ -34,8 +38,57 @@ async def get_workouts():
     
     values = result.get('values', [])
     data_rows = values[1:] if values else []
+    
+    all_rows_as_objects = rows_to_objects(data_rows)
+    
+    # Group by date
+    grouped_by_date = {}
+    for row in all_rows_as_objects:
+        date = row.get("date")
+        if date:
+            if date not in grouped_by_date:
+                grouped_by_date[date] = {
+                    "id": row.get("id"),
+                    "date": date,
+                    "category": row.get("category"),
+                    "exercises": []
+                }
+            
+            exercise_name = row.get("exercise")
+            exercise_intensity = row.get("intensity")
+            exercise_notes = row.get("notes")
+            
+            exercise = next((ex for ex in grouped_by_date[date]["exercises"] if ex["name"] == exercise_name and ex["intensity"] == exercise_intensity), None)
+            
+            if not exercise:
+                exercise = {
+                    "name": exercise_name,
+                    "intensity": exercise_intensity,
+                    "notes": exercise_notes,
+                    "sets": []
+                }
+                grouped_by_date[date]["exercises"].append(exercise)
+            
+            exercise["sets"].append({
+                "setNumber": row.get("set_number"),
+                "plan": row.get("plan"),
+                "actual": row.get("actual")
+            })
+
+    sorted_workouts = sorted(grouped_by_date.values(), key=lambda w: w['date'], reverse=True)
+    
+    total_workouts = len(sorted_workouts)
+    
+    start = (page - 1) * limit
+    end = start + limit
+    paginated_workouts = sorted_workouts[start:end]
         
-    return {"data": rows_to_objects(data_rows)}
+    return {
+        "data": paginated_workouts,
+        "total": total_workouts,
+        "page": page,
+        "limit": limit
+    }
 
 @router.get("/workouts/{workout_id}")
 async def get_workout_by_id(workout_id: str):

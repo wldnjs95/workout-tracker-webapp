@@ -13,7 +13,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const getActiveView = () => {
     if (location.pathname === '/') return 'dashboard';
     if (location.pathname.startsWith('/add')) return 'add-workout';
-    // Add other views here
+    if (location.pathname.startsWith('/progress')) return 'progress';
     return 'dashboard';
   };
 
@@ -22,8 +22,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       navigate('/');
     } else if (view === 'add-workout') {
       navigate('/add');
+    } else if (view === 'progress') {
+      navigate('/progress');
     }
-    // Add other views here
   };
 
   return (

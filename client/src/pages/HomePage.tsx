@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../components/ui/pagination";
 
 // These types should ideally be in a shared file
 interface Set {
@@ -23,73 +24,39 @@ interface Workout {
   exercises: Exercise[];
 }
 
-interface WorkoutRow {
-  id: string;
-  date: string;
-  category: string;
-  intensity: string;
-  exercise: string; // This is the exercise name
-  set_number: string;
-  plan: string;
-  actual: string;
-  notes: string;
-}
-
 function HomePage() {
   const [groupedWorkouts, setGroupedWorkouts] = useState<Workout[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [expandedWorkoutDate, setExpandedWorkoutDate] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const limit = 10;
 
-  const fetchWorkouts = async () => {
+  const fetchWorkouts = async (page: number) => {
     try {
-      setError(null); // Clear previous errors
-      const response = await fetch('http://localhost:8000/api/workouts');
+      setError(null);
+      const response = await fetch(`http://localhost:8000/api/workouts?page=${page}&limit=${limit}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data = await response.json();
-      const rows: WorkoutRow[] = data.data;
-
-      if (!rows || rows.length === 0) {
-        setGroupedWorkouts([]);
-        return;
-      }
-
-      const grouped = rows.reduce((acc: Record<string, Workout>, row: WorkoutRow) => {
-        const { id, date, category, intensity, exercise: exName, set_number: setNum, plan, actual, notes } = row;
-
-        if (!date || !id) return acc; // Skip rows without date or id
-
-        if (!acc[date]) {
-          acc[date] = { id, date, category, exercises: [] };
-        }
-
-        let exercise = acc[date].exercises.find(e => e.name === exName && e.intensity === intensity);
-        if (!exercise) {
-          exercise = { name: exName, intensity, notes, sets: [] };
-          acc[date].exercises.push(exercise);
-        }
-
-        exercise.sets.push({ setNumber: setNum, plan, actual });
-        return acc;
-      }, {});
-
-      setGroupedWorkouts(Object.values(grouped).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      const result = await response.json();
+      setGroupedWorkouts(result.data);
+      setTotalPages(Math.ceil(result.total / result.limit));
     } catch (e: any) {
       setError(e.message);
     }
   };
 
   useEffect(() => {
-    fetchWorkouts();
-  }, []);
+    fetchWorkouts(currentPage);
+  }, [currentPage]);
 
   const toggleWorkoutDetails = (date: string) => {
     setExpandedWorkoutDate(expandedWorkoutDate === date ? null : date);
   };
 
   const handleDeleteWorkout = async (e: React.MouseEvent, date: string) => {
-    e.stopPropagation(); // Prevent row from expanding
+    e.stopPropagation();
 
     if (window.confirm(`Are you sure you want to delete all workouts for ${date}?`)) {
       try {
@@ -102,7 +69,7 @@ function HomePage() {
           throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
 
-        fetchWorkouts(); // Refetch workouts to get the updated list
+        fetchWorkouts(currentPage);
       } catch (err: any) {
         setError(err.message);
       }
@@ -113,7 +80,7 @@ function HomePage() {
     if (window.confirm(`Are you sure you want to delete "${exerciseName}" from the workout on ${date}?`)) {
       try {
         const response = await fetch(`http://localhost:8000/api/workouts/delete-exercise`, {
-          method: 'POST', // Using POST to send a body easily
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -125,12 +92,59 @@ function HomePage() {
           throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
         }
 
-        fetchWorkouts(); // Refetch workouts to get the updated list
+        fetchWorkouts(currentPage);
       } catch (err: any) {
         setError(err.message);
       }
     }
   };
+
+  const handlePageChange = (page: number) => {
+    if (page > 0 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, currentPage + 2);
+
+      if (currentPage <= 3) {
+        startPage = 1;
+        endPage = maxPagesToShow;
+      } else if (currentPage >= totalPages - 2) {
+        startPage = totalPages - maxPagesToShow + 1;
+        endPage = totalPages;
+      }
+      
+      if (startPage > 1) {
+        pageNumbers.push(1);
+        if (startPage > 2) {
+          pageNumbers.push('...');
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          pageNumbers.push('...');
+        }
+        pageNumbers.push(totalPages);
+      }
+    }
+    return pageNumbers;
+  }
 
   return (
     <div className="App container mx-auto p-4">
@@ -272,6 +286,29 @@ function HomePage() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <Pagination className="mt-4">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1); }} />
+                </PaginationItem>
+                {renderPageNumbers().map((page, index) => (
+                  <PaginationItem key={index}>
+                    {page === '...' ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink href="#" isActive={page === currentPage} onClick={(e) => { e.preventDefault(); handlePageChange(page as number); }}>
+                        {page}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext href="#" onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1); }} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </div>
     </div>
