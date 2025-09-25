@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import './AddWorkoutPage.css';
 import ExerciseCard from './ExerciseCard';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Plus, X } from 'lucide-react';
 
 type SetRow = {
   plan: string;
@@ -38,7 +44,12 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
       exercises: [{ name: '', intensity: '', sets: [{ plan: '', actual: '' }], notes: '' }],
     },
   });
-  const { control, handleSubmit, reset } = methods;
+  const { control, handleSubmit, reset, watch, setValue, register } = methods;
+
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [newCategoryInput, setNewCategoryInput] = useState("");
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const defaultCategories = ["Push", "Pull", "Legs", "Cardio", "Full Body"];
 
   React.useEffect(() => {
     if (initialData) {
@@ -92,65 +103,142 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
     }
   };
 
+  const handleCategorySelect = (value: string) => {
+    if (value === "add-new") {
+      setShowNewCategoryInput(true);
+    } else {
+      setValue("category", value);
+    }
+  };
+
+  const handleAddNewCategory = () => {
+    if (newCategoryInput.trim() && !customCategories.includes(newCategoryInput.trim())) {
+      const newCategory = newCategoryInput.trim();
+      setCustomCategories([...customCategories, newCategory]);
+      setValue("category", newCategory);
+      setNewCategoryInput("");
+      setShowNewCategoryInput(false);
+    }
+  };
+
   return (
     <div className="add-workout-page container mx-auto p-4">
       <FormProvider {...methods}>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-semibold tracking-tight">
               {isEditing ? 'Edit Workout' : 'Add New Workout'}
             </h1>
             <div className="flex items-center gap-2">
-              <button type="submit" className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 transition-colors">
+              <Button type="submit">
                 Save Workout
-              </button>
-              <Link to="/" className="inline-flex items-center rounded-md border px-4 py-2 hover:bg-accent">
-                Back to Home
+              </Button>
+              <Link to="/">
+                <Button variant="outline">Back to Home</Button>
               </Link>
             </div>
           </div>
 
-          <div className="form-grid">
-            <label>
-              ID
-              <input type="text" {...methods.register('id')} readOnly className="readonly-input" />
-            </label>
+          <Card>
+            <CardHeader>
+              <CardTitle>Workout Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>ID</Label>
+                  <Input value={isEditing ? watch('id') : "Auto-generated on save"} disabled className="bg-muted" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input type="date" {...register("date")} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  {showNewCategoryInput ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter new category"
+                        value={newCategoryInput}
+                        onChange={(e) => setNewCategoryInput(e.target.value)}
+                      />
+                      <Button type="button" size="sm" onClick={handleAddNewCategory}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        type="button"
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowNewCategoryInput(false);
+                          setNewCategoryInput("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select value={watch("category")} onValueChange={handleCategorySelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {defaultCategories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                        {customCategories.map(cat => (
+                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                        <SelectItem value="add-new">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add New Category
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <label>
-              Date
-              <input type="date" {...methods.register('date')} />
-            </label>
-
-            <label>
-              Category
-              <input type="text" placeholder="e.g., Push, Pull, Legs" {...methods.register('category')} />
-            </label>
-          </div>
-
-          <div className="add-exercise-btn-container">
-            <button
-              type="button"
-              onClick={() =>
-                appendExercise({
-                  name: '',
-                  intensity: '',
-                  sets: [{ plan: '', actual: '' }],
-                  notes: '',
-                })
-              }
-            >
-              + Add Exercise
-            </button>
-          </div>
-
-          {exerciseFields.map((exercise, exIdx) => (
-            <ExerciseCard
-              key={exercise.id}
-              exerciseIndex={exIdx}
-              removeExercise={removeExercise}
-              isEditing={isEditing}
-            />
-          ))}
+          <Card>
+            <CardHeader>
+              <CardTitle>Exercise Planning</CardTitle>
+              <p className="text-muted-foreground">Plan your exercises and sets</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {exerciseFields.map((exercise, exIdx) => (
+                  <ExerciseCard
+                    key={exercise.id}
+                    exerciseIndex={exIdx}
+                    removeExercise={removeExercise}
+                    isEditing={isEditing}
+                  />
+                ))}
+                {exerciseFields.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No exercises added yet. Click "Add Exercise" to get started.</p>
+                  </div>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-4"
+                onClick={() =>
+                  appendExercise({
+                    name: '',
+                    intensity: '',
+                    sets: [{ plan: '', actual: '' }],
+                    notes: '',
+                  })
+                }
+              >
+                + Add Exercise
+              </Button>
+            </CardContent>
+          </Card>
         </form>
       </FormProvider>
     </div>

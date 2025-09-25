@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 
 // These types should ideally be in a shared file
 interface Set {
@@ -223,34 +224,34 @@ function HomePage() {
                                         </button>
                                       </div>
                                     </div>
-                                    <div className="overflow-x-auto">
-                                      <table className="text-sm">
-                                        <thead>
-                                          <tr>
+                                    <div className="overflow-x-auto w-fit">
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow>
                                             {sortedSets.map((set, index) => (
-                                              <th key={`${set.setNumber}-${index}`} colSpan={2} className="p-2 text-center font-medium border-b">Set {set.setNumber}</th>
+                                              <TableHead key={`${set.setNumber}-${index}`} colSpan={2} className="text-center">Set {set.setNumber}</TableHead>
                                             ))}
-                                          </tr>
-                                          <tr>
-                                            {sortedSets.map((set, index) => (
-                                              <React.Fragment key={`${set.setNumber}-${index}`}>
-                                                <th className="p-2 text-center font-normal border-b w-[100px]">Plan</th>
-                                                <th className="p-2 text-center font-normal border-b w-[100px]">Actual</th>
-                                              </React.Fragment>
-                                            ))}
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          <tr>
+                                          </TableRow>
+                                          <TableRow>
                                             {sortedSets.map((set, index) => (
                                               <React.Fragment key={`${set.setNumber}-${index}`}>
-                                                <td className="p-2 text-center">{set.plan}</td>
-                                                <td className="p-2 text-center">{set.actual}</td>
+                                                <TableHead className="text-center w-16">Plan</TableHead>
+                                                <TableHead className="text-center w-16">Actual</TableHead>
                                               </React.Fragment>
                                             ))}
-                                          </tr>
-                                        </tbody>
-                                      </table>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          <TableRow>
+                                            {sortedSets.map((set, index) => (
+                                              <React.Fragment key={`${set.setNumber}-${index}`}>
+                                                <TableCell className="text-center">{set.plan}</TableCell>
+                                                <TableCell className="text-center">{set.actual}</TableCell>
+                                              </React.Fragment>
+                                            ))}
+                                          </TableRow>
+                                        </TableBody>
+                                      </Table>
                                     </div>
                                   </div>
                                 );
