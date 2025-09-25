@@ -12,6 +12,8 @@ SPREADSHEET_HEADERS = ["id", "date", "category", "intensity", "exercise", "set_n
 def rows_to_objects(rows):
     object_list = []
     for row in rows:
+        if len(row) > 1:
+            row[1] = row[1].replace('.', '-') # Reformat date
         padded_row = row + [''] * (len(SPREADSHEET_HEADERS) - len(row))
         object_list.append(dict(zip(SPREADSHEET_HEADERS, padded_row)))
     return object_list

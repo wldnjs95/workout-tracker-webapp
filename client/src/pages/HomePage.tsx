@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import '../App.css';
-import './HomePage.css';
 
 // These types should ideally be in a shared file
 interface Set {
@@ -208,43 +206,55 @@ function HomePage() {
                           <td colSpan={5} className="details-cell p-0">
                             <div className="details-content p-4 space-y-4 bg-muted/20">
                               <h4 className="text-base font-semibold">Workout Log Details</h4>
-                              {workout.exercises.map((exercise, index) => (
-                                <div key={index} className="exercise-log-item rounded-md border p-4">
-                                  <div className="exercise-log-header flex items-center justify-between mb-2">
-                                    <h5 className="font-medium">{exercise.name}</h5>
-                                    <div className="exercise-header-actions flex items-center gap-2">
-                                      <span className="text-sm text-muted-foreground">{exercise.intensity}</span>
-                                      <button
-                                        aria-label={`Delete ${exercise.name}`}
-                                        onClick={() => handleDeleteExercise(workout.date, exercise.name)}
-                                        className="delete-exercise-button inline-flex h-6 w-6 items-center justify-center rounded hover:bg-red-50 text-red-600"
-                                      >
-                                        ✕
-                                      </button>
+                              {workout.exercises.map((exercise, index) => {
+                                const sortedSets = exercise.sets.sort((a,b) => parseInt(a.setNumber) - parseInt(b.setNumber));
+                                return (
+                                  <div key={index} className="exercise-log-item rounded-md border p-4 bg-background">
+                                    <div className="exercise-log-header flex items-center justify-between mb-2">
+                                      <h5 className="font-medium">{exercise.name}</h5>
+                                      <div className="exercise-header-actions flex items-center gap-2">
+                                        <span className="text-sm text-muted-foreground">{exercise.intensity}</span>
+                                        <button
+                                          aria-label={`Delete ${exercise.name}`}
+                                          onClick={() => handleDeleteExercise(workout.date, exercise.name)}
+                                          className="delete-exercise-button inline-flex h-6 w-6 items-center justify-center rounded hover:bg-red-50 text-red-600"
+                                        >
+                                          ✕
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                      <table className="text-sm">
+                                        <thead>
+                                          <tr>
+                                            {sortedSets.map((set, index) => (
+                                              <th key={`${set.setNumber}-${index}`} colSpan={2} className="p-2 text-center font-medium border-b">Set {set.setNumber}</th>
+                                            ))}
+                                          </tr>
+                                          <tr>
+                                            {sortedSets.map((set, index) => (
+                                              <React.Fragment key={`${set.setNumber}-${index}`}>
+                                                <th className="p-2 text-center font-normal border-b w-[100px]">Plan</th>
+                                                <th className="p-2 text-center font-normal border-b w-[100px]">Actual</th>
+                                              </React.Fragment>
+                                            ))}
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          <tr>
+                                            {sortedSets.map((set, index) => (
+                                              <React.Fragment key={`${set.setNumber}-${index}`}>
+                                                <td className="p-2 text-center">{set.plan}</td>
+                                                <td className="p-2 text-center">{set.actual}</td>
+                                              </React.Fragment>
+                                            ))}
+                                          </tr>
+                                        </tbody>
+                                      </table>
                                     </div>
                                   </div>
-                                  <div className="relative w-full overflow-x-auto">
-                                    <table className="sets-table w-full text-sm">
-                                      <thead className="[&_tr]:border-b">
-                                        <tr>
-                                          <th className="px-2 py-2 text-left">Set</th>
-                                          <th className="px-2 py-2 text-left">Plan</th>
-                                          <th className="px-2 py-2 text-left">Actual</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="[&_tr:last-child]:border-0">
-                                        {exercise.sets.sort((a,b) => parseInt(a.setNumber) - parseInt(b.setNumber)).map((set, setIndex) => (
-                                          <tr key={setIndex} className="border-b">
-                                            <td className="px-2 py-2">{set.setNumber}</td>
-                                            <td className="px-2 py-2">{set.plan}</td>
-                                            <td className="px-2 py-2">{set.actual}</td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           </td>
                         </tr>

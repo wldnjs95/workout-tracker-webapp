@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import './AddWorkoutPage.css';
+import ExerciseCard from './ExerciseCard';
 
 type SetRow = {
   plan: string;
@@ -29,7 +30,7 @@ type AddWorkoutPageProps = {
 
 function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps) {
   const navigate = useNavigate();
-  const { register, handleSubmit, control, reset } = useForm<FormData>({
+  const methods = useForm<FormData>({
     defaultValues: initialData || {
       id: `wk-${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
@@ -37,6 +38,7 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
       exercises: [{ name: '', intensity: '', sets: [{ plan: '', actual: '' }], notes: '' }],
     },
   });
+  const { control, handleSubmit, reset } = methods;
 
   React.useEffect(() => {
     if (initialData) {
@@ -49,31 +51,16 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
     name: 'exercises',
   });
 
-  const makeSetArrayHelpers = (exerciseIndex: number) => {
-    return useFieldArray({
-      control,
-      name: `exercises.${exerciseIndex}.sets` as const,
-    });
-  };
-
-  const addSetNumbers = (sets: SetRow[]) => {
-    return sets.map((set, index) => ({
-      ...set,
-      setNumber: index + 1,
-    }));
-  };
-
-  const normalizeExercises = (exercises: Exercise[]) => {
-    return exercises.map((ex) => ({
-      ...ex,
-      sets: addSetNumbers(ex.sets),
-    }));
-  };
-
   const onSubmit = async (data: FormData) => {
     const withSetNumbers = {
       ...data,
-      exercises: normalizeExercises(data.exercises),
+      exercises: data.exercises.map(ex => ({
+        ...ex,
+        sets: ex.sets.map((set, index) => ({
+          ...set,
+          setNumber: (index + 1).toString(),
+        })),
+      })),
     };
 
     const url = isEditing
@@ -106,150 +93,66 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
   };
 
   return (
-    <div className="add-workout-page">
-      <h1>{isEditing ? 'Edit Workout' : 'Add New Workout'}</h1>
-
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="form-grid">
-          <label>
-            ID
-            <input type="text" {...register('id')} readOnly className="readonly-input" />
-          </label>
-
-          <label>
-            Date
-            <input type="date" {...register('date')} />
-          </label>
-
-          <label>
-            Category
-            <input type="text" placeholder="e.g., Push, Pull, Legs" {...register('category')} />
-          </label>
-        </div>
-
-        <div className="add-exercise-btn-container">
-          <button
-            type="button"
-            onClick={() =>
-              appendExercise({
-                name: '',
-                intensity: '',
-                sets: [{ plan: '', actual: '' }],
-                notes: '',
-              })
-            }
-          >
-            + Add Exercise
-          </button>
-        </div>
-
-        {exerciseFields.map((exercise, exIdx) => {
-          const { fields: setFields, append: appendSet, remove: removeSet } =
-            makeSetArrayHelpers(exIdx);
-
-          return (
-            <div key={exercise.id} className="exercise-card">
-              <div className="exercise-header">
-                <strong>Exercise #{exIdx + 1}</strong>
-                <button
-                  type="button"
-                  onClick={() => removeExercise(exIdx)}
-                  className="remove-exercise-btn"
-                >
-                  Remove Exercise
-                </button>
-              </div>
-
-              <div className="exercise-inputs">
-                <label>
-                  Exercise
-                  <input
-                    type="text"
-                    placeholder="e.g., Squat"
-                    {...register(`exercises.${exIdx}.name` as const)}
-                  />
-                </label>
-
-                <label>
-                  Intensity
-                  <input
-                    type="text"
-                    placeholder="e.g., RPE 8 / 70%"
-                    {...register(`exercises.${exIdx}.intensity` as const)}
-                  />
-                </label>
-              </div>
-
-              {isEditing && (
-                <div className="notes-container">
-                  <label>
-                    Notes
-                    <textarea
-                      placeholder="e.g., Felt strong today, went up in weight."
-                      {...register(`exercises.${exIdx}.notes` as const)}
-                    />
-                  </label>
-                </div>
-              )}
-
-              <div className="set-list-container">
-                <div className="add-set-btn-container">
-                  <button
-                    type="button"
-                    onClick={() => appendSet({ plan: '', actual: '' })}
-                  >
-                    + Add Set
-                  </button>
-                </div>
-
-                {setFields.map((setField, setIdx) => (
-                  <div key={setField.id} className="set-row">
-                    <div>
-                      <label>Set #</label>
-                      <div className="set-number-display">
-                        {setIdx + 1}
-                      </div>
-                    </div>
-
-                    <label>
-                      Plan
-                      <input
-                        type="text"
-                        placeholder="e.g., 5 reps @ 100lb"
-                        {...register(
-                          `exercises.${exIdx}.sets.${setIdx}.plan` as const
-                        )}
-                      />
-                    </label>
-
-                    {isEditing && (
-                      <label>
-                        Actual
-                        <input
-                          type="text"
-                          placeholder="e.g., 5 reps @ 100lb"
-                          {...register(
-                            `exercises.${exIdx}.sets.${setIdx}.actual` as const
-                          )}
-                        />
-                      </label>
-                    )}
-
-                    <button type="button" onClick={() => removeSet(setIdx)}>
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
+    <div className="add-workout-page container mx-auto p-4">
+      <FormProvider {...methods}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {isEditing ? 'Edit Workout' : 'Add New Workout'}
+            </h1>
+            <div className="flex items-center gap-2">
+              <button type="submit" className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 transition-colors">
+                Save Workout
+              </button>
+              <Link to="/" className="inline-flex items-center rounded-md border px-4 py-2 hover:bg-accent">
+                Back to Home
+              </Link>
             </div>
-          );
-        })}
+          </div>
 
-        <button type="submit">Save Workout</button>
-      </form>
+          <div className="form-grid">
+            <label>
+              ID
+              <input type="text" {...methods.register('id')} readOnly className="readonly-input" />
+            </label>
 
-      <br />
-      <Link to="/">Back to Home</Link>
+            <label>
+              Date
+              <input type="date" {...methods.register('date')} />
+            </label>
+
+            <label>
+              Category
+              <input type="text" placeholder="e.g., Push, Pull, Legs" {...methods.register('category')} />
+            </label>
+          </div>
+
+          <div className="add-exercise-btn-container">
+            <button
+              type="button"
+              onClick={() =>
+                appendExercise({
+                  name: '',
+                  intensity: '',
+                  sets: [{ plan: '', actual: '' }],
+                  notes: '',
+                })
+              }
+            >
+              + Add Exercise
+            </button>
+          </div>
+
+          {exerciseFields.map((exercise, exIdx) => (
+            <ExerciseCard
+              key={exercise.id}
+              exerciseIndex={exIdx}
+              removeExercise={removeExercise}
+              isEditing={isEditing}
+            />
+          ))}
+        </form>
+      </FormProvider>
     </div>
   );
 }
