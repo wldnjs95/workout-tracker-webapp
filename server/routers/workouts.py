@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from models import Workout, DeleteExerciseRequest
 import config
+from collections import Counter
 
 router = APIRouter()
 
@@ -17,10 +18,6 @@ def rows_to_objects(rows):
         padded_row = row + [''] * (len(SPREADSHEET_HEADERS) - len(row))
         object_list.append(dict(zip(SPREADSHEET_HEADERS, padded_row)))
     return object_list
-
-from fastapi import Query
-
-# ... (the rest of the imports)
 
 @router.get("/workouts")
 async def get_workouts(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, le=100)):
@@ -41,7 +38,6 @@ async def get_workouts(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, 
     
     all_rows_as_objects = rows_to_objects(data_rows)
     
-    # Group by date
     grouped_by_date = {}
     for row in all_rows_as_objects:
         date = row.get("date")
@@ -77,6 +73,22 @@ async def get_workouts(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, 
 
     sorted_workouts = sorted(grouped_by_date.values(), key=lambda w: w['date'], reverse=True)
     
+    for workout in sorted_workouts:
+        total_sets = 0
+        completed_sets = 0
+        for exercise in workout["exercises"]:
+            total_sets += len(exercise["sets"])
+            for s in exercise["sets"]:
+                if s.get("actual"):
+                    completed_sets += 1
+        
+        if completed_sets == 0:
+            workout["status"] = "Not Started"
+        elif completed_sets == total_sets:
+            workout["status"] = "Success"
+        else:
+            workout["status"] = "Partially Missed"
+
     total_workouts = len(sorted_workouts)
     
     start = (page - 1) * limit
@@ -89,6 +101,43 @@ async def get_workouts(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, 
         "page": page,
         "limit": limit
     }
+
+@router.get("/workouts/stats")
+async def get_workout_stats():
+    creds = service_account.Credentials.from_service_account_file(
+        config.SERVICE_ACCOUNT_FILE, scopes=config.SCOPES
+    )
+    service = build("sheets", "v4", credentials=creds)
+    
+    range_name = f"{config.SHEET_NAME}!A:I"
+    
+    result = service.spreadsheets().values().get(
+        spreadsheetId=config.SPREADSHEET_ID,
+        range=range_name
+    ).execute()
+    
+    values = result.get('values', [])
+    data_rows = values[1:] if values else []
+    
+    all_rows_as_objects = rows_to_objects(data_rows)
+    
+    categories_by_date = {}
+    for row in all_rows_as_objects:
+        date = row.get("date")
+        category = row.get("category")
+        if date and category:
+            categories_by_date[date] = category
+            
+    categories = list(categories_by_date.values())
+    print(f"Categories found: {categories}")
+    
+    if not categories:
+        most_frequent_category = "N/A"
+    else:
+        category_counts = Counter(categories)
+        most_frequent_category = category_counts.most_common(1)[0][0]
+        
+    return {"most_frequent_category": most_frequent_category}
 
 @router.get("/workouts/{workout_id}")
 async def get_workout_by_id(workout_id: str):

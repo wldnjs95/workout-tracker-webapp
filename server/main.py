@@ -5,7 +5,8 @@ from routers import workouts
 app = FastAPI()
 
 origins = [
-    "http://localhost:5173" # front server
+    "http://localhost:5173", # front server
+    "http://localhost:5174"
 ]
 
 app.add_middleware(

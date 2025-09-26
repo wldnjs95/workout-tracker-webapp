@@ -221,16 +221,12 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
               <CardTitle>Workout Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>ID</Label>
-                  <Input value={isEditing ? watch('id') : "Auto-generated on save"} disabled className="bg-muted" />
-                </div>
-                <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <div className="space-y-2 w-48">
                   <Label>Date</Label>
                   <Input type="date" {...register("date")} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 w-48">
                   <Label>Category</Label>
                   {showNewCategoryInput ? (
                     <div className="flex gap-2">
@@ -280,8 +276,26 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
 
           <Card>
             <CardHeader>
-              <CardTitle>Exercise Planning</CardTitle>
-              <p className="text-muted-foreground">Plan your exercises and sets</p>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Exercise Planning</CardTitle>
+                  <p className="text-muted-foreground">Plan your exercises and sets</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    appendExercise({
+                      name: '',
+                      intensity: '',
+                      sets: [{ plan: '', actual: '' }],
+                      notes: '',
+                    })
+                  }
+                >
+                  + Add Exercise
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -304,21 +318,6 @@ function AddWorkoutPage({ isEditing = false, initialData }: AddWorkoutPageProps)
                   </div>
                 )}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-4"
-                onClick={() =>
-                  appendExercise({
-                    name: '',
-                    intensity: '',
-                    sets: [{ plan: '', actual: '' }],
-                    notes: '',
-                  })
-                }
-              >
-                + Add Exercise
-              </Button>
             </CardContent>
           </Card>
         </form>

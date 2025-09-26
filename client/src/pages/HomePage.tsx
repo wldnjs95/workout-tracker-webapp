@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../components/ui/pagination";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { ChevronDown, ChevronRight, Activity, TrendingUp, Clock } from 'lucide-react';
 
 // These types should ideally be in a shared file
 interface Set {
@@ -22,6 +26,7 @@ interface Workout {
   date: string;
   category: string;
   exercises: Exercise[];
+  status: string;
 }
 
 function HomePage() {
@@ -30,6 +35,8 @@ function HomePage() {
   const [expandedWorkoutDate, setExpandedWorkoutDate] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalWorkouts, setTotalWorkouts] = useState(0);
+  const [mostFrequentCategory, setMostFrequentCategory] = useState("N/A");
   const limit = 10;
 
   const fetchWorkouts = async (page: number) => {
@@ -42,14 +49,32 @@ function HomePage() {
       const result = await response.json();
       setGroupedWorkouts(result.data);
       setTotalPages(Math.ceil(result.total / result.limit));
+      setTotalWorkouts(result.total);
     } catch (e: any) {
       setError(e.message);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/workouts/stats`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      setMostFrequentCategory(result.most_frequent_category);
+    } catch (e: any) {
+      console.error("Error fetching stats:", e.message);
     }
   };
 
   useEffect(() => {
     fetchWorkouts(currentPage);
   }, [currentPage]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   const toggleWorkoutDetails = (date: string) => {
     setExpandedWorkoutDate(expandedWorkoutDate === date ? null : date);
@@ -70,6 +95,7 @@ function HomePage() {
         }
 
         fetchWorkouts(currentPage);
+        fetchStats(); // Refetch stats after deleting a workout
       } catch (err: any) {
         setError(err.message);
       }
@@ -146,15 +172,24 @@ function HomePage() {
     return pageNumbers;
   }
 
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'Success':
+        return 'default';
+      case 'Partially Missed':
+        return 'secondary';
+      case 'Not Started':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
   return (
     <div className="App container mx-auto p-4">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold tracking-tight">Workout Tracker</h1>
-        <Link to="/add">
-          <button className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 transition-colors">
-            Add New Workout
-          </button>
-        </Link>
+        
       </div>
       {error && (
         <div role="alert" className="alert alert-error mb-4">
@@ -162,130 +197,166 @@ function HomePage() {
         </div>
       )}
 
-      <div className="workouts-container card shadow-md rounded-lg border">
-        <div className="card-header border-b p-4">
-          <h2 className="card-title text-lg font-semibold">Workout Calendar</h2>
-          <p className="card-description text-muted-foreground text-sm">
+      <div className="grid gap-4 md:grid-cols-3 mb-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Workouts</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalWorkouts}</div>
+            <p className="text-xs text-muted-foreground">logged</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Most Frequent Category</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mostFrequentCategory}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Duration</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+            <p className="text-xs text-muted-foreground">minutes</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">Workout Calendar</h2>
+          <p className="text-sm text-muted-foreground">
             Click on any workout to view the detailed log.
           </p>
-        </div>
-        <div className="card-content p-4">
-          <div className="relative w-full overflow-x-auto">
-            <table className="main-workout-table w-full caption-bottom text-sm">
-              <thead className="[&_tr]:border-b">
-                <tr>
-                  <th style={{ width: '50px' }} className="px-2 py-2"></th>
-                  <th className="px-2 py-2 text-left">Date</th>
-                  <th className="px-2 py-2 text-left">Category</th>
-                  <th className="px-2 py-2 text-left">Exercises</th>
-                  <th style={{ width: '150px' }} className="px-2 py-2 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="[&_tr:last-child]:border-0">
-                {groupedWorkouts.length > 0 ? (
-                  groupedWorkouts.map(workout => (
-                    <React.Fragment key={workout.date}>
-                      <tr
-                        className="workout-summary-row hover:bg-muted/50 transition-colors border-b cursor-pointer"
-                        onClick={() => toggleWorkoutDetails(workout.date)}
-                        aria-expanded={expandedWorkoutDate === workout.date}
-                      >
-                        <td className="px-2 py-2">
-                          <span className="expand-icon mr-2">
-                            {expandedWorkoutDate === workout.date ? '▼' : '▶'}
-                          </span>
-                        </td>
-                        <td className="px-2 py-2">{workout.date}</td>
-                        <td className="px-2 py-2">
-                          <span className="category-badge">{workout.category}</span>
-                        </td>
-                        <td className="px-2 py-2">
-                          <span className="exercise-count-badge">{workout.exercises.length} exercises</span>
-                        </td>
-                        <td className="px-2 py-2">
-                          <div className="actions-cell flex items-center gap-2">
-                            <Link to={`/workout/${workout.id}`} className="edit-button inline-flex items-center rounded-md border px-3 py-1.5 hover:bg-accent">
-                              Edit
-                            </Link>
-                            <button
-                              onClick={(e) => handleDeleteWorkout(e, workout.date)}
-                              className="delete-button inline-flex items-center rounded-md border px-3 py-1.5 text-red-600 hover:bg-red-50"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {expandedWorkoutDate === workout.date && (
-                        <tr className="workout-details-row">
-                          <td colSpan={5} className="details-cell p-0">
-                            <div className="details-content p-4 space-y-4 bg-muted/20">
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead style={{ width: '50px' }}></TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead style={{ width: '150px' }}>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {groupedWorkouts.length > 0 ? (
+                groupedWorkouts.map(workout => (
+                  <React.Fragment key={workout.date}>
+                    <TableRow
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => toggleWorkoutDetails(workout.date)}
+                    >
+                      <TableCell>
+                        {expandedWorkoutDate === workout.date ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </TableCell>
+                      <TableCell>{workout.date}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{workout.category}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(workout.status)}>{workout.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:bg-red-50 hover:text-red-600"
+                            onClick={(e) => handleDeleteWorkout(e, workout.date)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {expandedWorkoutDate === workout.date && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="p-0">
+                          <div className={`collapsible-content ${expandedWorkoutDate === workout.date ? 'open' : ''}`}>
+                            <div className="p-4 space-y-4 bg-[#f9f9f9]">
+                              <div className="flex justify-between items-center">
                               <h4 className="text-base font-semibold">Workout Log Details</h4>
+                              <Link to={`/workout/${workout.id}`}>
+                                <Button variant="outline" size="sm">Edit</Button>
+                              </Link>
+                            </div>
                               {workout.exercises.map((exercise, index) => {
                                 const sortedSets = exercise.sets.sort((a,b) => parseInt(a.setNumber) - parseInt(b.setNumber));
                                 return (
-                                  <div key={index} className="exercise-log-item rounded-md border p-4 bg-background">
-                                    <div className="exercise-log-header flex items-center justify-between mb-2">
-                                      <h5 className="font-medium">{exercise.name}</h5>
-                                      <div className="exercise-header-actions flex items-center gap-2">
-                                        <span className="text-sm text-muted-foreground">{exercise.intensity}</span>
-                                        <button
-                                          aria-label={`Delete ${exercise.name}`}
-                                          onClick={() => handleDeleteExercise(workout.date, exercise.name)}
-                                          className="delete-exercise-button inline-flex h-6 w-6 items-center justify-center rounded hover:bg-red-50 text-red-600"
-                                        >
-                                          ✕
-                                        </button>
+                                  <div key={index} className="rounded-lg border bg-background">
+                                    <div className="flex items-center justify-between px-8 py-3 border-b bg-muted/50">
+                                      <div className="flex items-center gap-2">
+                                        <h5 className="font-medium">{exercise.name}</h5>
+                                        <span className="text-sm text-muted-foreground">· {exercise.intensity}</span>
                                       </div>
+                                      <button
+                                        aria-label={`Delete ${exercise.name}`}
+                                        onClick={() => handleDeleteExercise(workout.date, exercise.name)}
+                                        className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-red-50 text-red-600"
+                                      >
+                                        ✕
+                                      </button>
                                     </div>
-                                    <div className="overflow-x-auto w-fit">
-                                      <Table>
-                                        <TableHeader>
-                                          <TableRow>
-                                            {sortedSets.map((set, index) => (
-                                              <TableHead key={`${set.setNumber}-${index}`} colSpan={2} className="text-center">Set {set.setNumber}</TableHead>
-                                            ))}
-                                          </TableRow>
-                                          <TableRow>
-                                            {sortedSets.map((set, index) => (
-                                              <React.Fragment key={`${set.setNumber}-${index}`}>
-                                                <TableHead className="text-center w-16">Plan</TableHead>
-                                                <TableHead className="text-center w-16">Actual</TableHead>
-                                              </React.Fragment>
-                                            ))}
-                                          </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                          <TableRow>
-                                            {sortedSets.map((set, index) => (
-                                              <React.Fragment key={`${set.setNumber}-${index}`}>
-                                                <TableCell className="text-center">{set.plan}</TableCell>
-                                                <TableCell className="text-center">{set.actual}</TableCell>
-                                              </React.Fragment>
-                                            ))}
-                                          </TableRow>
-                                        </TableBody>
-                                      </Table>
+                                    <div className="p-4">
+                                      <div className="overflow-x-auto w-fit">
+                                        <Table>
+                                          <TableHeader>
+                                            <TableRow>
+                                              {sortedSets.map((set, index) => (
+                                                <TableHead key={`${set.setNumber}-${index}`} colSpan={2} className="text-center">Set {set.setNumber}</TableHead>
+                                              ))}
+                                            </TableRow>
+                                            <TableRow>
+                                              {sortedSets.map((set, index) => (
+                                                <React.Fragment key={`${set.setNumber}-${index}`}>
+                                                  <TableHead className="text-center w-16 font-normal text-muted-foreground">Plan</TableHead>
+                                                  <TableHead className="text-center w-16 font-normal text-muted-foreground">Actual</TableHead>
+                                                </React.Fragment>
+                                              ))}
+                                            </TableRow>
+                                          </TableHeader>
+                                          <TableBody>
+                                            <TableRow>
+                                              {sortedSets.map((set, index) => (
+                                                <React.Fragment key={`${set.setNumber}-${index}`}>
+                                                  <TableCell className="text-center">{set.plan}</TableCell>
+                                                  <TableCell className="text-center">{set.actual}</TableCell>
+                                                </React.Fragment>
+                                              ))}
+                                            </TableRow>
+                                          </TableBody>
+                                        </Table>
+                                      </div>
                                     </div>
                                   </div>
                                 );
                               })}
                             </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} style={{ textAlign: 'center', padding: '20px' }}>
-                      Loading workouts or no workouts found...
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center p-10">
+                    Loading workouts or no workouts found...
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
           {totalPages > 1 && (
             <Pagination className="mt-4">
               <PaginationContent>
@@ -309,8 +380,8 @@ function HomePage() {
               </PaginationContent>
             </Pagination>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

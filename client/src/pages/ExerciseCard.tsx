@@ -41,8 +41,8 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Input placeholder="e.g. Bench Press" {...register(`exercises.${exerciseIndex}.name` as const)} className="font-medium bg-transparent border-none p-0 h-auto focus:ring-0 text-base w-48" />
-            <Input placeholder="e.g. 185lbs" {...register(`exercises.${exerciseIndex}.intensity` as const)} className="w-32 h-7 text-sm text-muted-foreground" />
+            <Input placeholder="e.g. Bench Press" {...register(`exercises.${exerciseIndex}.name` as const)} className="bg-muted focus:bg-muted/80 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-transparent" />
+            <Input placeholder="e.g. 185lbs" {...register(`exercises.${exerciseIndex}.intensity` as const)} className="bg-muted focus:bg-muted/80 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-transparent" />
           </div>
           <Button variant="ghost" size="icon" onClick={() => removeExercise(exerciseIndex)}>
             <Trash2 className="h-4 w-4" />
@@ -80,7 +80,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
                       <Input
                         {...register(`exercises.${exerciseIndex}.sets.${setIndex}.plan` as const)}
                         className={`w-full h-6 text-xs px-1 text-center ${isPreviewSet ? 'bg-primary/10 border-primary/30 border-dashed' : ''}`}
-                        placeholder="Plan"
+                        placeholder="0"
                       />
                       {isEditing && (
                         <Input
